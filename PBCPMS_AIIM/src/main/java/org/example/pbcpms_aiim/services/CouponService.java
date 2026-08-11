@@ -59,6 +59,7 @@ public class CouponService {
         return CouponDto.from(couponRepository.save(coupon));
     }
 
+    @Transactional
     public List<CouponDto> listAll() {
         return couponRepository.findAllByOrderByIssuedAtDesc().stream()
                 .map(this::refreshStatus)
@@ -66,6 +67,7 @@ public class CouponService {
                 .toList();
     }
 
+    @Transactional
     public List<CouponDto> listForOwner(Long ownerId) {
         return couponRepository.findByOwnerIdOrderByIssuedAtDesc(ownerId).stream()
                 .map(this::refreshStatus)
@@ -73,10 +75,12 @@ public class CouponService {
                 .toList();
     }
 
+    @Transactional
     public CouponDto getById(Long id) {
         return CouponDto.from(refreshStatus(findCoupon(id)));
     }
 
+    @Transactional(readOnly = true)
     public CouponDto verify(String code, Long ownerId, BigDecimal requiredAmount) {
         Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
                 .orElseThrow(() -> ApiException.notFound("Coupon not found"));
@@ -111,6 +115,7 @@ public class CouponService {
         return couponRepository.save(coupon);
     }
 
+    @Transactional(readOnly = true)
     public Coupon findActiveForPayment(String code, Long ownerId, BigDecimal requiredAmount) {
         Coupon coupon = couponRepository.findByCodeIgnoreCase(code.trim())
                 .orElseThrow(() -> ApiException.notFound("Coupon not found"));
@@ -148,7 +153,7 @@ public class CouponService {
     }
 
     private Coupon findCoupon(Long id) {
-        return couponRepository.findById(id)
+        return couponRepository.findByIdWithOwner(id)
                 .orElseThrow(() -> ApiException.notFound("Coupon not found"));
     }
 

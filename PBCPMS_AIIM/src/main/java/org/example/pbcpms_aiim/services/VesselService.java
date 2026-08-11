@@ -45,31 +45,35 @@ public class VesselService {
         return VesselDto.from(vesselRepository.save(vessel));
     }
 
+    @Transactional(readOnly = true)
     public List<VesselDto> listForOwner(Long ownerId) {
         return vesselRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream()
                 .map(VesselDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<VesselDto> listApprovedForOwner(Long ownerId) {
         return vesselRepository.findByOwnerIdAndStatus(ownerId, VesselStatus.APPROVED).stream()
                 .map(VesselDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<VesselDto> listAll() {
-        return vesselRepository.findAll().stream()
-                .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
+        return vesselRepository.findAllWithOwner().stream()
                 .map(VesselDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<VesselDto> listByStatus(VesselStatus status) {
         return vesselRepository.findByStatusOrderByCreatedAtDesc(status).stream()
                 .map(VesselDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public VesselDto getById(Long id) {
         return VesselDto.from(findVessel(id));
     }
@@ -101,7 +105,7 @@ public class VesselService {
     }
 
     private Vessel findVessel(Long id) {
-        return vesselRepository.findById(id)
+        return vesselRepository.findByIdWithOwner(id)
                 .orElseThrow(() -> ApiException.notFound("Vessel not found"));
     }
 }

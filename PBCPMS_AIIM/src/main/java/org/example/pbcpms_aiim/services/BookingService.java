@@ -83,18 +83,21 @@ public class BookingService {
         return BookingDto.from(bookingRepository.save(booking));
     }
 
+    @Transactional(readOnly = true)
     public List<BookingDto> listForOwner(Long ownerId) {
         return bookingRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream()
                 .map(BookingDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<BookingDto> listAll() {
         return bookingRepository.findAllByOrderByCreatedAtDesc().stream()
                 .map(BookingDto::from)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public BookingDto getById(Long id, Long requesterId, boolean isAdmin) {
         Booking booking = findBooking(id);
         if (!isAdmin && !booking.getOwner().getId().equals(requesterId)) {
@@ -230,7 +233,7 @@ public class BookingService {
     }
 
     private Booking findBooking(Long id) {
-        return bookingRepository.findById(id)
+        return bookingRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> ApiException.notFound("Booking not found"));
     }
 }
