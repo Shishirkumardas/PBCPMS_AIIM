@@ -1,5 +1,6 @@
 # Build from monorepo root so Render finds Dockerfile at /
 # Backend sources live in PBCPMS_AIIM/
+# Active config: application.properties (env: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET)
 
 # ---- build ----
 FROM maven:3.9.9-eclipse-temurin-21 AS build
@@ -19,8 +20,7 @@ RUN chown app:app app.jar
 
 USER app
 
-ENV SPRING_PROFILES_ACTIVE=render
 EXPOSE 8080
 
-# Render sets PORT; application-render.properties maps it to server.port
+# Render sets PORT; application.properties uses server.port=${PORT:8080}
 ENTRYPOINT ["java", "-jar", "app.jar"]

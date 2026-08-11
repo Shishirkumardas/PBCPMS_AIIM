@@ -4,64 +4,81 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Maps cloud {@code DATABASE_URL} ({@code postgres://…}) to Spring datasource
- * system properties before the context starts.
+ * Ensures {@code DB_URL} / {@code DATABASE_URL} work with Spring's JDBC driver.
  * <p>
- * EnvironmentPostProcessor registration can be missed in executable fat JARs
- * (META-INF may sit at the archive root rather than under BOOT-INF/classes),
- * so {@link #applyFromEnvironment()} is also invoked from {@code main}.
+ * Render often injects {@code postgres://user:pass@host/db}. This converts that
+ * to {@code jdbc:postgresql://…} and sets {@code DB_URL}, {@code DB_USERNAME},
+ * {@code DB_PASSWORD} (and {@code spring.datasource.*}) as system properties
+ * before the context starts — matching the sb_ai_full env-var style.
  */
 public final class DatabaseUrlSupport {
 
     private DatabaseUrlSupport() {
     }
 
-    /**
-     * If {@code DATABASE_URL} is set and {@code SPRING_DATASOURCE_URL} is not,
-     * set {@code spring.datasource.*} system properties (highest precedence).
-     */
     public static void applyFromEnvironment() {
-        String existingJdbc = firstNonBlank(
-                System.getenv("SPRING_DATASOURCE_URL"),
-                System.getProperty("SPRING_DATASOURCE_URL"),
-                System.getProperty("spring.datasource.url")
-        );
-        if (existingJdbc != null && existingJdbc.startsWith("jdbc:") && !existingJdbc.contains("localhost")) {
-            return;
-        }
-
-        String databaseUrl = firstNonBlank(
+        String rawUrl = firstNonBlank(
+                System.getenv("DB_URL"),
+                System.getProperty("DB_URL"),
                 System.getenv("DATABASE_URL"),
                 System.getenv("DATABASE_PRIVATE_URL"),
                 System.getProperty("DATABASE_URL")
         );
 
-        if (databaseUrl == null || databaseUrl.isBlank()) {
-            if (isRenderProfile()) {
-                System.err.println(
-                        "[pbcpms] WARNING: SPRING_PROFILES_ACTIVE=render but DATABASE_URL is not set. "
-                                + "Link a Render PostgreSQL database (or set DATABASE_URL / SPRING_DATASOURCE_URL). "
-                                + "Falling back to application.properties defaults (often localhost)."
-                );
-            }
+        if (rawUrl == null || rawUrl.isBlank()) {
+            System.err.println(
+                    "[pbcpms] WARNING: DB_URL / DATABASE_URL is not set. "
+                            + "Set DB_URL (jdbc:postgresql://…), DB_USERNAME, DB_PASSWORD on Render."
+            );
             return;
         }
 
         try {
-            Parsed parsed = parse(databaseUrl.trim());
-            System.setProperty("spring.datasource.url", parsed.jdbcUrl());
-            System.setProperty("SPRING_DATASOURCE_URL", parsed.jdbcUrl());
-            if (!parsed.username().isEmpty()) {
-                System.setProperty("spring.datasource.username", parsed.username());
-                System.setProperty("SPRING_DATASOURCE_USERNAME", parsed.username());
+            String trimmed = rawUrl.trim();
+            if (trimmed.startsWith("jdbc:postgresql://") || trimmed.startsWith("jdbc:")) {
+                // Already JDBC — still ensure sslmode on cloud hosts if missing
+                if (trimmed.startsWith("jdbc:postgresql://") && !trimmed.contains("sslmode=")
+                        && !trimmed.contains("localhost")) {
+                    trimmed = ensureSsl(trimmed);
+                    System.setProperty("DB_URL", trimmed);
+                    System.setProperty("spring.datasource.url", trimmed);
+                }
+                // If user/pass only in separate env vars, leave them to Spring
+                copyEnvToSystemPropertyIfPresent("DB_USERNAME", "spring.datasource.username");
+                copyEnvToSystemPropertyIfPresent("DB_PASSWORD", "spring.datasource.password");
+                System.out.println("[pbcpms] Datasource DB_URL (JDBC) -> " + redact(trimmed));
+                return;
             }
-            // Always set password (may be empty)
-            System.setProperty("spring.datasource.password", parsed.password());
-            System.setProperty("SPRING_DATASOURCE_PASSWORD", parsed.password());
-            System.out.println("[pbcpms] Datasource configured from DATABASE_URL -> " + redact(parsed.jdbcUrl()));
+
+            Parsed parsed = parse(trimmed);
+            System.setProperty("DB_URL", parsed.jdbcUrl());
+            System.setProperty("spring.datasource.url", parsed.jdbcUrl());
+
+            String username = firstNonBlank(
+                    System.getenv("DB_USERNAME"),
+                    System.getProperty("DB_USERNAME"),
+                    parsed.username()
+            );
+            String password = firstNonBlank(
+                    System.getenv("DB_PASSWORD"),
+                    System.getProperty("DB_PASSWORD"),
+                    parsed.password()
+            );
+            if (username == null) {
+                username = "";
+            }
+            if (password == null) {
+                password = "";
+            }
+            System.setProperty("DB_USERNAME", username);
+            System.setProperty("DB_PASSWORD", password);
+            System.setProperty("spring.datasource.username", username);
+            System.setProperty("spring.datasource.password", password);
+
+            System.out.println("[pbcpms] Datasource configured from URL -> " + redact(parsed.jdbcUrl()));
         } catch (Exception ex) {
-            System.err.println("[pbcpms] ERROR: Failed to parse DATABASE_URL: " + ex.getMessage());
-            throw new IllegalStateException("Invalid DATABASE_URL", ex);
+            System.err.println("[pbcpms] ERROR: Failed to parse DB_URL/DATABASE_URL: " + ex.getMessage());
+            throw new IllegalStateException("Invalid DB_URL / DATABASE_URL", ex);
         }
     }
 
@@ -79,12 +96,11 @@ public final class DatabaseUrlSupport {
         if (normalized.startsWith("jdbc:")) {
             return new Parsed(normalized, "", "");
         }
-        throw new IllegalArgumentException("Unsupported DATABASE_URL scheme (expected postgres:// or jdbc:postgresql://)");
+        throw new IllegalArgumentException(
+                "Unsupported DB_URL scheme (expected postgres:// or jdbc:postgresql://)");
     }
 
     private static Parsed parseJdbc(String jdbcUrl) {
-        // jdbc:postgresql://user:pass@host:port/db?… is rare; usually user/pass are separate.
-        // If credentials are embedded after //, extract them.
         String withoutPrefix = jdbcUrl.substring("jdbc:postgresql://".length());
         int at = withoutPrefix.lastIndexOf('@');
         if (at > 0 && withoutPrefix.indexOf('/') > at) {
@@ -93,22 +109,17 @@ public final class DatabaseUrlSupport {
             String[] parts = userInfo.split(":", 2);
             String user = urlDecode(parts[0]);
             String pass = parts.length > 1 ? urlDecode(parts[1]) : "";
-            String rebuilt = "jdbc:postgresql://" + hostAndRest;
-            rebuilt = ensureSsl(rebuilt);
+            String rebuilt = ensureSsl("jdbc:postgresql://" + hostAndRest);
             return new Parsed(rebuilt, user, pass);
         }
         return new Parsed(ensureSsl(jdbcUrl), "", "");
     }
 
-    /**
-     * Parse {@code postgresql://user:pass@host:port/db?query} without relying solely on
-     * {@link java.net.URI} (passwords may contain reserved characters).
-     */
     private static Parsed parsePostgresUri(String postgresqlUrl) {
         String rest = postgresqlUrl.substring("postgresql://".length());
         int at = rest.lastIndexOf('@');
         if (at < 0) {
-            throw new IllegalArgumentException("DATABASE_URL missing @userinfo@host");
+            throw new IllegalArgumentException("URL missing userinfo@host");
         }
         String userInfo = rest.substring(0, at);
         String hostPart = rest.substring(at + 1);
@@ -117,7 +128,6 @@ public final class DatabaseUrlSupport {
         String username = urlDecode(userPass[0]);
         String password = userPass.length > 1 ? urlDecode(userPass[1]) : "";
 
-        // host:port/path?query
         String host;
         int port = 5432;
         String pathAndQuery;
@@ -126,7 +136,6 @@ public final class DatabaseUrlSupport {
         pathAndQuery = slash >= 0 ? hostPart.substring(slash) : "/pbcpms";
 
         int colon = hostPort.lastIndexOf(':');
-        // IPv6 would be [..] — Render uses hostnames
         if (colon > 0 && hostPort.indexOf(']') < 0) {
             host = hostPort.substring(0, colon);
             port = Integer.parseInt(hostPort.substring(colon + 1));
@@ -163,21 +172,12 @@ public final class DatabaseUrlSupport {
         return jdbcUrl.contains("?") ? jdbcUrl + "&sslmode=require" : jdbcUrl + "?sslmode=require";
     }
 
-    private static boolean isRenderProfile() {
-        String profiles = firstNonBlank(
-                System.getenv("SPRING_PROFILES_ACTIVE"),
-                System.getProperty("spring.profiles.active"),
-                System.getProperty("SPRING_PROFILES_ACTIVE")
-        );
-        if (profiles == null) {
-            return false;
+    private static void copyEnvToSystemPropertyIfPresent(String envKey, String springKey) {
+        String v = firstNonBlank(System.getenv(envKey), System.getProperty(envKey));
+        if (v != null) {
+            System.setProperty(envKey, v);
+            System.setProperty(springKey, v);
         }
-        for (String p : profiles.split(",")) {
-            if ("render".equalsIgnoreCase(p.trim())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static String firstNonBlank(String... values) {
@@ -197,7 +197,6 @@ public final class DatabaseUrlSupport {
     }
 
     private static String redact(String jdbcUrl) {
-        // hide password if ever embedded
         return jdbcUrl.replaceAll("//([^:/@]+):([^@/]+)@", "//$1:***@");
     }
 

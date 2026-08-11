@@ -1,5 +1,6 @@
 # Render Blueprint — https://render.com/docs/blueprint-spec
 # Deploy: Dashboard → New → Blueprint → select this repo
+# Active config: PBCPMS_AIIM/src/main/resources/application.properties (no Spring profile required)
 services:
   - type: web
     name: pbcpms-api
@@ -9,8 +10,6 @@ services:
     dockerContext: .
     healthCheckPath: /api/health
     envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: render
       - key: JWT_SECRET
         generateValue: true
       - key: APP_SEED_ENABLED
@@ -18,6 +17,21 @@ services:
       # Set after frontend is live, e.g. https://your-app.vercel.app
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      # application.properties uses DB_URL / DB_USERNAME / DB_PASSWORD
+      # connectionString may be postgres://… — converted to JDBC in main
+      - key: DB_URL
+        fromDatabase:
+          name: pbcpms-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: pbcpms-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pbcpms-db
+          property: password
+      # Also expose raw Render URL for tools that expect DATABASE_URL
       - key: DATABASE_URL
         fromDatabase:
           name: pbcpms-db

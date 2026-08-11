@@ -17,11 +17,10 @@ public class JwtService {
     private final long expirationMs;
 
 
-    public JwtService(@Value("${pbcpms_aiim.jwt.secret}") String secret,
-                      @Value("${pbcpms_aiim.jwt.expiration-ms}") long expirationMs) {
-
-             this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-             this.expirationMs = expirationMs;
+    public JwtService(@Value("${jwt.secret}") String secret,
+                      @Value("${jwt.expiration:86400000}") long expirationMs) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        this.expirationMs = expirationMs;
     }
 
     public String generateToken(String email, Long userId, String role) {

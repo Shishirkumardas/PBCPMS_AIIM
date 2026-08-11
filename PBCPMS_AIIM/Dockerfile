@@ -1,5 +1,5 @@
 # Backend-only context (dockerContext: ./PBCPMS_AIIM).
-# Prefer the monorepo-root Dockerfile when deploying from GitHub root.
+# Prefer monorepo-root Dockerfile when deploying from GitHub root.
 
 # ---- build ----
 FROM maven:3.9.9-eclipse-temurin-21 AS build
@@ -19,7 +19,6 @@ RUN chown app:app app.jar
 
 USER app
 
-ENV SPRING_PROFILES_ACTIVE=render
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

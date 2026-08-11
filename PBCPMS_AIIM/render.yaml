@@ -1,5 +1,5 @@
 # Nested blueprint (if docker root is set to PBCPMS_AIIM/).
-# Prefer the monorepo-root render.yaml for full-repo deploys.
+# Prefer monorepo-root render.yaml for full-repo deploys.
 services:
   - type: web
     name: pbcpms-api
@@ -9,14 +9,24 @@ services:
     dockerContext: .
     healthCheckPath: /api/health
     envVars:
-      - key: SPRING_PROFILES_ACTIVE
-        value: render
       - key: JWT_SECRET
         generateValue: true
       - key: APP_SEED_ENABLED
         value: "true"
       - key: CORS_ALLOWED_ORIGINS
         sync: false
+      - key: DB_URL
+        fromDatabase:
+          name: pbcpms-db
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: pbcpms-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: pbcpms-db
+          property: password
       - key: DATABASE_URL
         fromDatabase:
           name: pbcpms-db

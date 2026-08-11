@@ -51,11 +51,11 @@ PBCPMS_AIIM/
 
 ## Local PostgreSQL
 
-Default `application.properties` connects to:
+For local runs, copy settings from `application-local.properties` into `application.properties` (or set the same env vars). Reference defaults:
 
 | Setting | Value |
 |---------|--------|
-| URL | `jdbc:postgresql://localhost:5433/pbcpms` (PostgreSQL 18) |
+| URL | `jdbc:postgresql://localhost:5433/pbcpms` |
 | User | `postgres` |
 | Password | `postgres` |
 
@@ -102,6 +102,18 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ---
 
+## Config files (like `sb_ai_full`)
+
+| File | Role |
+|------|------|
+| `application.properties` | **Active** config (used on Render and by default) |
+| `application-local.properties` | Reference only — copy into `application.properties` for local runs |
+| `application-render.properties` | Reference only — copy if you need a Render-style env-var template |
+
+No Spring profile is required. Deploy uses env vars: `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`.
+
+---
+
 ## Deploy backend (Render)
 
 The **repo root** has `Dockerfile` and `render.yaml` so Render can build without a nested path.
@@ -110,30 +122,27 @@ The **repo root** has `Dockerfile` and `render.yaml` so Render can build without
 
 1. Push this repo to GitHub.
 2. On [Render](https://render.com): **New → Blueprint** → select the repo (uses root `render.yaml`).
-3. Apply the blueprint (creates `pbcpms-api` web service + `pbcpms-db` Postgres).
+3. Apply the blueprint (creates `pbcpms-api` web service + `pbcpms-db` Postgres and wires `DB_*`).
 4. After the frontend is live, set `CORS_ALLOWED_ORIGINS` on the web service to your Vercel URL (e.g. `https://your-app.vercel.app`).
 
 ### Option B — Manual Web Service
 
 1. **New → Web Service** → connect this repo.
-2. Runtime: **Docker** (Dockerfile path defaults to root `./Dockerfile`).
-3. Create a **PostgreSQL** database and link it, or set `DATABASE_URL` manually.
-4. Environment variables:
+2. Runtime: **Docker** (root `./Dockerfile`).
+3. Create **PostgreSQL** and set env vars (or **Add from Database**).
 
 | Variable | Example |
 |----------|---------|
-| `SPRING_PROFILES_ACTIVE` | `render` |
-| `DATABASE_URL` | Render Postgres connection string (`postgres://…`) |
-| `JWT_SECRET` | long random string |
+| `DB_URL` | `jdbc:postgresql://…` **or** Render `postgres://…` (auto-converted in `main`) |
+| `DB_USERNAME` | Postgres user |
+| `DB_PASSWORD` | Postgres password |
+| `JWT_SECRET` | long random string (≥ 32 chars) |
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
 | `APP_SEED_ENABLED` | `true` (first run) |
 
-Render injects `PORT`; the app binds via `server.port=${PORT:8080}`.  
-`DATABASE_URL` (`postgres://…`) is converted to JDBC in `main` via `DatabaseUrlSupport` (also see `DatabaseUrlEnvironmentPostProcessor`).  
+Render injects `PORT` → `server.port=${PORT:8080}`.  
 Health check: `/api/health`  
-Profile file: `PBCPMS_AIIM/src/main/resources/application-render.properties`
-
-**Required:** the web service must have `DATABASE_URL` (link the Postgres instance under **Environment → Add from Database**, or use the Blueprint). Without it the app tries `localhost:5432` and crashes.
+Active config: `PBCPMS_AIIM/src/main/resources/application.properties`
 
 **Note:** Free Postgres plans may no longer be available on Render — pick the smallest paid DB plan if the blueprint fails on the database step.
 

@@ -35,4 +35,14 @@ class DatabaseUrlSupportTest {
         );
         assertEquals("jdbc:postgresql://localhost:5432/pbcpms?sslmode=disable", parsed.jdbcUrl());
     }
+
+    @Test
+    void parsesDbUrlStyleLikeSbAiFull() {
+        DatabaseUrlSupport.Parsed parsed = DatabaseUrlSupport.parse(
+                "postgres://pbcpms:pass@dpg-xyz.render.com/pbcpms"
+        );
+        assertEquals("pbcpms", parsed.username());
+        assertEquals("pass", parsed.password());
+        assertTrue(parsed.jdbcUrl().startsWith("jdbc:postgresql://dpg-xyz.render.com:5432/pbcpms"));
+    }
 }
