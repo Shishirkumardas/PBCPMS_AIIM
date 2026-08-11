@@ -55,7 +55,7 @@ Default `application.properties` connects to:
 
 | Setting | Value |
 |---------|--------|
-| URL | `jdbc:postgresql://localhost:5432/pbcpms` |
+| URL | `jdbc:postgresql://localhost:5433/pbcpms` (PostgreSQL 18) |
 | User | `postgres` |
 | Password | `postgres` |
 
