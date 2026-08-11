@@ -14,9 +14,8 @@ services:
         generateValue: true
       - key: APP_SEED_ENABLED
         value: "true"
-      # Set after frontend is live, e.g. https://your-app.vercel.app
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://pbcpms-aiim.vercel.app
       # application.properties uses DB_URL / DB_USERNAME / DB_PASSWORD
       # connectionString may be postgres://… — converted to JDBC in main
       - key: DB_URL

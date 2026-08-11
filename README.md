@@ -123,7 +123,7 @@ The **repo root** has `Dockerfile` and `render.yaml` so Render can build without
 1. Push this repo to GitHub.
 2. On [Render](https://render.com): **New → Blueprint** → select the repo (uses root `render.yaml`).
 3. Apply the blueprint (creates `pbcpms-api` web service + `pbcpms-db` Postgres and wires `DB_*`).
-4. After the frontend is live, set `CORS_ALLOWED_ORIGINS` on the web service to your Vercel URL (e.g. `https://your-app.vercel.app`).
+4. After the frontend is live, set `CORS_ALLOWED_ORIGINS` on the web service to `https://pbcpms-aiim.vercel.app`.
 
 ### Option B — Manual Web Service
 
@@ -137,7 +137,7 @@ The **repo root** has `Dockerfile` and `render.yaml` so Render can build without
 | `DB_USERNAME` | Postgres user |
 | `DB_PASSWORD` | Postgres password |
 | `JWT_SECRET` | long random string (≥ 32 chars) |
-| `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
+| `CORS_ALLOWED_ORIGINS` | `https://pbcpms-aiim.vercel.app` |
 | `APP_SEED_ENABLED` | `true` (first run) |
 
 Render injects `PORT` → `server.port=${PORT:8080}`.  

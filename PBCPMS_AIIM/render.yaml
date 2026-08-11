@@ -14,7 +14,7 @@ services:
       - key: APP_SEED_ENABLED
         value: "true"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://pbcpms-aiim.vercel.app
       - key: DB_URL
         fromDatabase:
           name: pbcpms-db
