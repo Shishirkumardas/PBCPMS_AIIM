@@ -129,9 +129,11 @@ The **repo root** has `Dockerfile` and `render.yaml` so Render can build without
 | `APP_SEED_ENABLED` | `true` (first run) |
 
 Render injects `PORT`; the app binds via `server.port=${PORT:8080}`.  
-`DATABASE_URL` is converted to JDBC by `DatabaseUrlEnvironmentPostProcessor`.  
+`DATABASE_URL` (`postgres://…`) is converted to JDBC in `main` via `DatabaseUrlSupport` (also see `DatabaseUrlEnvironmentPostProcessor`).  
 Health check: `/api/health`  
 Profile file: `PBCPMS_AIIM/src/main/resources/application-render.properties`
+
+**Required:** the web service must have `DATABASE_URL` (link the Postgres instance under **Environment → Add from Database**, or use the Blueprint). Without it the app tries `localhost:5432` and crashes.
 
 **Note:** Free Postgres plans may no longer be available on Render — pick the smallest paid DB plan if the blueprint fails on the database step.
 
