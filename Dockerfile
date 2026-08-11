@@ -1,12 +1,12 @@
-# Backend-only context (dockerContext: ./PBCPMS_AIIM).
-# Prefer the monorepo-root Dockerfile when deploying from GitHub root.
+# Build from monorepo root so Render finds Dockerfile at /
+# Backend sources live in PBCPMS_AIIM/
 
 # ---- build ----
 FROM maven:3.9.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
-COPY pom.xml .
-COPY src ./src
+COPY PBCPMS_AIIM/pom.xml .
+COPY PBCPMS_AIIM/src ./src
 RUN mvn -B -DskipTests package
 
 # ---- run ----
@@ -22,4 +22,5 @@ USER app
 ENV SPRING_PROFILES_ACTIVE=render
 EXPOSE 8080
 
+# Render sets PORT; application-render.properties maps it to server.port
 ENTRYPOINT ["java", "-jar", "app.jar"]

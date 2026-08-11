@@ -20,10 +20,10 @@ A mini web system where vessel/vehicle owners request pilot/service support for 
 
 ```
 PBCPMS_AIIM/
+├── Dockerfile            # Render / Docker (API image, monorepo root)
+├── render.yaml           # Render Blueprint
 ├── PBCPMS_AIIM/          # Spring Boot backend
 ├── frontend/             # Next.js frontend
-├── requirement1.jfif     # Project requirements (part 1)
-├── requirement2.jfif     # Project requirements (part 2)
 └── README.md
 ```
 
@@ -104,20 +104,36 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ## Deploy backend (Render)
 
+The **repo root** has `Dockerfile` and `render.yaml` so Render can build without a nested path.
+
+### Option A — Blueprint (recommended)
+
 1. Push this repo to GitHub.
-2. On [Render](https://render.com), create a **Web Service** from the `PBCPMS_AIIM` folder (Dockerfile), **or** use `render.yaml` Blueprint.
-3. Attach a Render PostgreSQL database (or set `DATABASE_URL`).
+2. On [Render](https://render.com): **New → Blueprint** → select the repo (uses root `render.yaml`).
+3. Apply the blueprint (creates `pbcpms-api` web service + `pbcpms-db` Postgres).
+4. After the frontend is live, set `CORS_ALLOWED_ORIGINS` on the web service to your Vercel URL (e.g. `https://your-app.vercel.app`).
+
+### Option B — Manual Web Service
+
+1. **New → Web Service** → connect this repo.
+2. Runtime: **Docker** (Dockerfile path defaults to root `./Dockerfile`).
+3. Create a **PostgreSQL** database and link it, or set `DATABASE_URL` manually.
 4. Environment variables:
 
 | Variable | Example |
 |----------|---------|
 | `SPRING_PROFILES_ACTIVE` | `render` |
-| `DATABASE_URL` | Render Postgres connection string |
+| `DATABASE_URL` | Render Postgres connection string (`postgres://…`) |
 | `JWT_SECRET` | long random string |
 | `CORS_ALLOWED_ORIGINS` | `https://your-app.vercel.app` |
 | `APP_SEED_ENABLED` | `true` (first run) |
 
-Profile file: `src/main/resources/application-render.properties`
+Render injects `PORT`; the app binds via `server.port=${PORT:8080}`.  
+`DATABASE_URL` is converted to JDBC by `DatabaseUrlEnvironmentPostProcessor`.  
+Health check: `/api/health`  
+Profile file: `PBCPMS_AIIM/src/main/resources/application-render.properties`
+
+**Note:** Free Postgres plans may no longer be available on Render — pick the smallest paid DB plan if the blueprint fails on the database step.
 
 ---
 

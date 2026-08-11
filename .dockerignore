@@ -1,0 +1,30 @@
+# Git / IDE
+.git
+.gitignore
+.idea
+.vscode
+**/.idea
+**/.vscode
+
+# Frontend (not part of API image)
+frontend
+
+# Docs
+*.md
+!README.md
+
+# Backend build artifacts & local data
+PBCPMS_AIIM/target
+PBCPMS_AIIM/data
+PBCPMS_AIIM/.idea
+PBCPMS_AIIM/**/*.iml
+PBCPMS_AIIM/.mvn/wrapper/maven-wrapper.jar
+
+# Nested deploy files (root Dockerfile is used)
+PBCPMS_AIIM/Dockerfile
+PBCPMS_AIIM/render.yaml
+
+# OS junk
+.DS_Store
+Thumbs.db
+**/*.log
