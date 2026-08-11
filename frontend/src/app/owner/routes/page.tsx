@@ -53,7 +53,17 @@ export default function OwnerRoutesPage() {
               <p className="mt-2 text-sm text-slate-600">
                 {r.origin} → {r.destination}
               </p>
-              <p className="mt-2 text-xs text-slate-500">{r.description || t("common.none")}</p>
+              {r.description && (
+                <p className="mt-2 text-xs text-slate-500">{r.description}</p>
+              )}
+              <div className="mt-3 rounded-lg border border-bd-green/15 bg-bd-green-light/40 px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-bd-green-dark">
+                  {t("routes.pilotServices")}
+                </p>
+                <p className="mt-1 text-sm text-slate-700">
+                  {r.pilotServices || t("routes.pilotServicesDefault")}
+                </p>
+              </div>
               <div className="mt-4 flex items-center justify-between">
                 <p className="text-xl font-bold text-bd-green">
                   {formatMoney(r.serviceFee)}

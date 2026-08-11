@@ -144,6 +144,25 @@ function NewBookingForm() {
                   </option>
                 ))}
               </select>
+              {selectedRoute && (
+                <div className="mt-3 rounded-lg border border-bd-green/15 bg-bd-green-light/40 p-3">
+                  <p className="text-sm font-semibold text-bd-green-dark">
+                    {selectedRoute.name}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {selectedRoute.origin} → {selectedRoute.destination}
+                  </p>
+                  {selectedRoute.description && (
+                    <p className="mt-2 text-xs text-slate-500">{selectedRoute.description}</p>
+                  )}
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-bd-green-dark">
+                    {t("routes.pilotServices")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-700">
+                    {selectedRoute.pilotServices || t("routes.pilotServicesDefault")}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>

@@ -20,6 +20,9 @@ public class RouteRequest {
 
     private String description;
 
+    /** Pilot services included for this route (shown on owner route cards) */
+    private String pilotServices;
+
     @NotNull(message = "Service fee is required")
     @DecimalMin(value = "0.01", message = "Service fee must be greater than 0")
     private BigDecimal serviceFee;

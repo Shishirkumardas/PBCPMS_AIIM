@@ -45,6 +45,8 @@ export interface Route {
   origin: string;
   destination: string;
   description?: string;
+  /** Pilot / service details included with this route */
+  pilotServices?: string;
   serviceFee: number;
   active: boolean;
   createdAt: string;

@@ -110,6 +110,7 @@ export const api = {
     origin: string;
     destination: string;
     description?: string;
+    pilotServices?: string;
     serviceFee: number;
     active?: boolean;
   }) =>
@@ -124,6 +125,7 @@ export const api = {
       origin: string;
       destination: string;
       description?: string;
+      pilotServices?: string;
       serviceFee: number;
       active?: boolean;
     }

@@ -39,6 +39,15 @@ public class DataSeeder implements CommandLineRunner {
             log.info("Updated legacy admin email to admin@pbcpms.com");
         });
 
+        // Backfill pilotServices on existing routes (column added later)
+        routeRepository.findAll().forEach(route -> {
+            if (route.getPilotServices() == null || route.getPilotServices().isBlank()) {
+                String services = defaultPilotServicesFor(route.getName(), route.getOrigin(), route.getDestination());
+                route.setPilotServices(services);
+                routeRepository.save(route);
+            }
+        });
+
         if (!seedEnabled || userRepository.count() > 0) {
             return;
         }
@@ -109,6 +118,7 @@ public class DataSeeder implements CommandLineRunner {
                 .origin("Dhaka")
                 .destination("Barisal")
                 .description("Inland waterway pilot service")
+                .pilotServices("Licensed inland pilot, night navigation support, river channel guidance, docking assistance")
                 .serviceFee(new BigDecimal("5000.00"))
                 .active(true)
                 .createdAt(LocalDateTime.now())
@@ -119,6 +129,7 @@ public class DataSeeder implements CommandLineRunner {
                 .origin("Chittagong")
                 .destination("Cox's Bazar")
                 .description("Coastal pilot route")
+                .pilotServices("Coastal navigation pilot, weather routing advice, passenger ferry escort, harbor entry support")
                 .serviceFee(new BigDecimal("8500.00"))
                 .active(true)
                 .createdAt(LocalDateTime.now())
@@ -129,6 +140,7 @@ public class DataSeeder implements CommandLineRunner {
                 .origin("Khulna")
                 .destination("Mongla")
                 .description("Port approach pilotage")
+                .pilotServices("Port approach pilot, berthing/unberthing, tanker escort, draft & tide guidance")
                 .serviceFee(new BigDecimal("6500.00"))
                 .active(true)
                 .createdAt(LocalDateTime.now())
@@ -198,6 +210,19 @@ public class DataSeeder implements CommandLineRunner {
                 .build());
 
         log.info("Seed complete. Admin: admin@pbcpms.com / Admin@123 | Owner: owner@example.com / Owner@123");
-        log.info("Seeded admin id={}, owner id={}", admin.getId(), owner.getId());
+    }
+
+    private static String defaultPilotServicesFor(String name, String origin, String destination) {
+        String key = ((name != null ? name : "") + " " + (origin != null ? origin : "") + " " + (destination != null ? destination : "")).toLowerCase();
+        if (key.contains("barisal") || key.contains("dhaka")) {
+            return "Licensed inland pilot, night navigation support, river channel guidance, docking assistance";
+        }
+        if (key.contains("cox") || key.contains("chittagong")) {
+            return "Coastal navigation pilot, weather routing advice, passenger ferry escort, harbor entry support";
+        }
+        if (key.contains("mongla") || key.contains("khulna")) {
+            return "Port approach pilot, berthing/unberthing, tanker escort, draft & tide guidance";
+        }
+        return "Licensed pilot / service provider assignment, navigation guidance, docking support";
     }
 }

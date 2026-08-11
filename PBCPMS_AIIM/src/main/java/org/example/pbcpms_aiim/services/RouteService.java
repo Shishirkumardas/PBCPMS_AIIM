@@ -25,6 +25,7 @@ public class RouteService {
                 .origin(request.getOrigin().trim())
                 .destination(request.getDestination().trim())
                 .description(request.getDescription())
+                .pilotServices(trimToNull(request.getPilotServices()))
                 .serviceFee(request.getServiceFee())
                 .active(request.getActive() == null || request.getActive())
                 .createdAt(LocalDateTime.now())
@@ -39,6 +40,7 @@ public class RouteService {
         route.setOrigin(request.getOrigin().trim());
         route.setDestination(request.getDestination().trim());
         route.setDescription(request.getDescription());
+        route.setPilotServices(trimToNull(request.getPilotServices()));
         route.setServiceFee(request.getServiceFee());
         if (request.getActive() != null) {
             route.setActive(request.getActive());
@@ -80,5 +82,13 @@ public class RouteService {
     private Route findRoute(Long id) {
         return routeRepository.findById(id)
                 .orElseThrow(() -> ApiException.notFound("Route not found"));
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

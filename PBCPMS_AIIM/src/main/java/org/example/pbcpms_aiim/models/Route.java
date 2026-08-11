@@ -29,6 +29,10 @@ public class Route {
 
     private String description;
 
+    /** Pilot / service details shown to owners on route cards */
+    @Column(length = 1000)
+    private String pilotServices;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal serviceFee;
 

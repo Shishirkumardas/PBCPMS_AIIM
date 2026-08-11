@@ -13,6 +13,7 @@ const empty = {
   origin: "",
   destination: "",
   description: "",
+  pilotServices: "",
   serviceFee: "",
 };
 
@@ -49,7 +50,8 @@ export default function AdminRoutesPage() {
         name: form.name,
         origin: form.origin,
         destination: form.destination,
-        description: form.description,
+        description: form.description || undefined,
+        pilotServices: form.pilotServices || undefined,
         serviceFee: Number(form.serviceFee),
         active: true,
       };
@@ -75,6 +77,7 @@ export default function AdminRoutesPage() {
       origin: r.origin,
       destination: r.destination,
       description: r.description || "",
+      pilotServices: r.pilotServices || "",
       serviceFee: String(r.serviceFee),
     });
   }
@@ -121,6 +124,15 @@ export default function AdminRoutesPage() {
               <textarea className="input-field min-h-[80px]" value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </div>
+            <div>
+              <label className="label-field">{t("routes.pilotServices")}</label>
+              <textarea
+                className="input-field min-h-[80px]"
+                value={form.pilotServices}
+                onChange={(e) => setForm({ ...form, pilotServices: e.target.value })}
+                placeholder={t("routes.pilotServicesPlaceholder")}
+              />
+            </div>
             <div className="flex gap-2">
               <button className="btn-primary flex-1" type="submit">
                 {editId ? t("common.update") : t("common.create")}
@@ -159,6 +171,12 @@ export default function AdminRoutesPage() {
                       <td>
                         <p className="font-semibold">{r.name}</p>
                         <p className="text-xs text-slate-500">{r.description || t("common.none")}</p>
+                        {r.pilotServices && (
+                          <p className="mt-1 text-xs text-bd-green-dark">
+                            <span className="font-semibold">{t("routes.pilotServices")}: </span>
+                            {r.pilotServices}
+                          </p>
+                        )}
                       </td>
                       <td>
                         {r.origin} → {r.destination}

@@ -19,6 +19,7 @@ public class RouteDto {
     private String origin;
     private String destination;
     private String description;
+    private String pilotServices;
     private BigDecimal serviceFee;
     private boolean active;
     private LocalDateTime createdAt;
@@ -30,6 +31,7 @@ public class RouteDto {
                 .origin(r.getOrigin())
                 .destination(r.getDestination())
                 .description(r.getDescription())
+                .pilotServices(r.getPilotServices())
                 .serviceFee(r.getServiceFee())
                 .active(r.isActive())
                 .createdAt(r.getCreatedAt())

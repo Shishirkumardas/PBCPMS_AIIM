@@ -200,12 +200,15 @@ public class BookingService {
         if (booking.getPaymentStatus() != PaymentStatus.PAID) {
             throw ApiException.badRequest("Booking must be paid first");
         }
-        if (booking.getBookingStatus() == BookingStatus.REJECTED
-                || booking.getBookingStatus() == BookingStatus.CANCELLED) {
-            throw ApiException.badRequest("Cannot assign pilot to rejected/cancelled booking");
+        BookingStatus current = booking.getBookingStatus();
+        if (current == BookingStatus.REJECTED
+                || current == BookingStatus.CANCELLED
+                || current == BookingStatus.COMPLETED) {
+            throw ApiException.badRequest("Cannot assign pilot to booking in status: " + current);
         }
 
-        if (booking.getBookingStatus() == BookingStatus.PENDING) {
+        // Allow assign after approve (APPROVED), or approve+assign from PENDING / re-assign from ASSIGNED
+        if (current == BookingStatus.PENDING) {
             booking.setBookingStatus(BookingStatus.APPROVED);
             booking.setReviewedAt(LocalDateTime.now());
         }
@@ -221,6 +224,23 @@ public class BookingService {
         if (!pilot.isActive()) {
             throw ApiException.badRequest("Pilot is not active");
         }
+
+        // Same pilot already on this booking — treat as success
+        if (booking.getPilot() != null && booking.getPilot().getId().equals(pilotId)) {
+            booking.setBookingStatus(BookingStatus.ASSIGNED);
+            if (booking.getAssignedAt() == null) {
+                booking.setAssignedAt(LocalDateTime.now());
+            }
+            return;
+        }
+
+        // Free previously assigned pilot (re-assignment)
+        if (booking.getPilot() != null) {
+            Pilot previous = booking.getPilot();
+            previous.setAvailable(true);
+            pilotRepository.save(previous);
+        }
+
         if (!pilot.isAvailable()) {
             throw ApiException.badRequest("Pilot is not available");
         }

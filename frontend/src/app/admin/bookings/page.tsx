@@ -23,10 +23,25 @@ export default function AdminBookingsPage() {
   async function load() {
     setLoading(true);
     try {
-      const [b, p] = await Promise.all([api.allBookings(), api.availablePilots()]);
+      // Prefer available pilots; if none, fall back to active pilots list
+      const [b, available, all] = await Promise.all([
+        api.allBookings(),
+        api.availablePilots(),
+        api.allPilots(),
+      ]);
       setBookings(b);
-      setPilots(p);
-      if (p.length && !pilotId) setPilotId(String(p[0].id));
+      const pool =
+        available.length > 0
+          ? available
+          : all.filter((p) => p.active);
+      setPilots(pool);
+      if (pool.length) {
+        setPilotId((prev) =>
+          prev && pool.some((p) => String(p.id) === prev) ? prev : String(pool[0].id)
+        );
+      } else {
+        setPilotId("");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : t("common.failed"));
     } finally {
@@ -39,16 +54,24 @@ export default function AdminBookingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function approveAndAssign(id: number) {
+  async function approveOnly(id: number) {
+    try {
+      await api.reviewBooking(id, { status: "APPROVED" });
+      setSuccess(t("bookings.approvedOk"));
+      load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("common.failed"));
+    }
+  }
+
+  async function assignPilot(id: number) {
     if (!pilotId) {
       setError(t("bookings.selectPilot"));
       return;
     }
     try {
-      await api.reviewBooking(id, {
-        status: "ASSIGNED",
-        pilotId: Number(pilotId),
-      });
+      // Dedicated assign endpoint works for PENDING (auto-approves) and APPROVED
+      await api.assignPilot(id, Number(pilotId));
       setSuccess(t("bookings.assignedOk"));
       setAssignId(null);
       load();
@@ -101,7 +124,9 @@ export default function AdminBookingsPage() {
             <thead>
               <tr>
                 <th>{t("bookings.id")}</th>
-                <th>{t("common.owner")} / {t("common.vessel")}</th>
+                <th>
+                  {t("common.owner")} / {t("common.vessel")}
+                </th>
                 <th>{t("common.route")}</th>
                 <th>{t("common.payment")}</th>
                 <th>{t("common.status")}</th>
@@ -163,33 +188,65 @@ export default function AdminBookingsPage() {
                   <td className="text-xs">{formatDate(b.createdAt)}</td>
                   <td>
                     <div className="flex flex-wrap gap-2">
-                      {(b.bookingStatus === "PENDING" ||
-                        b.bookingStatus === "APPROVED") && (
+                      {b.bookingStatus === "PENDING" && (
+                        <>
+                          <button
+                            className="btn-secondary px-3 py-1.5 text-xs"
+                            onClick={() => approveOnly(b.id)}
+                          >
+                            {t("common.approve")}
+                          </button>
+                          <button
+                            className="btn-primary px-3 py-1.5 text-xs"
+                            onClick={() => setAssignId(b.id)}
+                          >
+                            {t("bookings.assignPilot")}
+                          </button>
+                          <button
+                            className="btn-danger px-3 py-1.5 text-xs"
+                            onClick={() => setRejectId(b.id)}
+                          >
+                            {t("common.reject")}
+                          </button>
+                        </>
+                      )}
+                      {b.bookingStatus === "APPROVED" && (
                         <>
                           <button
                             className="btn-primary px-3 py-1.5 text-xs"
                             onClick={() => setAssignId(b.id)}
                           >
-                            {t("bookings.approveAssign")}
+                            {t("bookings.assignPilot")}
                           </button>
-                          {b.bookingStatus === "PENDING" && (
-                            <button
-                              className="btn-danger px-3 py-1.5 text-xs"
-                              onClick={() => setRejectId(b.id)}
-                            >
-                              {t("common.reject")}
-                            </button>
-                          )}
+                          <button
+                            className="btn-secondary px-3 py-1.5 text-xs"
+                            onClick={() => complete(b.id)}
+                          >
+                            {t("common.complete")}
+                          </button>
+                          <button
+                            className="btn-danger px-3 py-1.5 text-xs"
+                            onClick={() => setRejectId(b.id)}
+                          >
+                            {t("common.reject")}
+                          </button>
                         </>
                       )}
-                      {(b.bookingStatus === "ASSIGNED" ||
-                        b.bookingStatus === "APPROVED") && (
-                        <button
-                          className="btn-secondary px-3 py-1.5 text-xs"
-                          onClick={() => complete(b.id)}
-                        >
-                          {t("common.complete")}
-                        </button>
+                      {b.bookingStatus === "ASSIGNED" && (
+                        <>
+                          <button
+                            className="btn-secondary px-3 py-1.5 text-xs"
+                            onClick={() => setAssignId(b.id)}
+                          >
+                            {t("bookings.reassignPilot")}
+                          </button>
+                          <button
+                            className="btn-primary px-3 py-1.5 text-xs"
+                            onClick={() => complete(b.id)}
+                          >
+                            {t("common.complete")}
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
@@ -219,6 +276,7 @@ export default function AdminBookingsPage() {
                 <option key={p.id} value={p.id}>
                   {p.name} · {p.licenseNumber}
                   {p.specialization ? ` · ${p.specialization}` : ""}
+                  {!p.available ? ` (${t("bookings.busy")})` : ""}
                 </option>
               ))}
             </select>
@@ -228,10 +286,10 @@ export default function AdminBookingsPage() {
               </button>
               <button
                 className="btn-primary"
-                onClick={() => approveAndAssign(assignId)}
+                onClick={() => assignPilot(assignId)}
                 disabled={!pilotId}
               >
-                {t("common.confirm")}
+                {t("bookings.confirmAssign")}
               </button>
             </div>
           </div>
