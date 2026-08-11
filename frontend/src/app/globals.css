@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bd-green: #006a4e;
+  --bd-green-dark: #004d38;
+  --bd-green-light: #e6f4ef;
+  --bd-red: #f42a41;
+  --bd-gold: #c4a35a;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  color: #1e293b;
+  background: #f7fbf9;
+  font-family: var(--font-noto), "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* Better Bangla typography when BN is active */
+html.lang-bn body {
+  font-family: var(--font-bengali), var(--font-noto), "Noto Sans Bengali",
+    "SolaimanLipi", "Kalpurush", system-ui, sans-serif;
+  line-height: 1.65;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-bd-green px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-bd-green-dark focus:outline-none focus:ring-2 focus:ring-bd-green/40 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-bd-green/30 bg-white px-4 py-2.5 text-sm font-semibold text-bd-green shadow-sm transition hover:bg-bd-green-light focus:outline-none focus:ring-2 focus:ring-bd-green/30 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-bd-red px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-bd-red/40 disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-bd-green focus:ring-2 focus:ring-bd-green/20;
+  }
+
+  .label-field {
+    @apply mb-1.5 block text-sm font-medium text-slate-700;
+  }
+
+  .card {
+    @apply rounded-xl border border-bd-green/10 bg-white p-5 shadow-card;
+  }
+
+  .page-title {
+    @apply text-2xl font-bold tracking-tight text-bd-green-dark;
+  }
+
+  .page-subtitle {
+    @apply mt-1 text-sm text-slate-500;
+  }
+
+  .table-wrap {
+    @apply overflow-x-auto rounded-xl border border-bd-green/10 bg-white shadow-card;
+  }
+
+  .data-table {
+    @apply min-w-full divide-y divide-slate-100 text-left text-sm;
+  }
+
+  .data-table thead {
+    @apply bg-bd-green-light/70 text-xs uppercase tracking-wide text-bd-green-dark;
+  }
+
+  .data-table th {
+    @apply px-4 py-3 font-semibold;
+  }
+
+  .data-table td {
+    @apply px-4 py-3 text-slate-700;
+  }
+
+  .data-table tbody tr {
+    @apply border-t border-slate-50 transition hover:bg-bd-green-light/40;
+  }
+}

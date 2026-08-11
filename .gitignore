@@ -1,0 +1,33 @@
+# Backend
+PBCPMS_AIIM/target/
+PBCPMS_AIIM/data/
+PBCPMS_AIIM/.idea/
+PBCPMS_AIIM/*.iml
+*.class
+*.log
+*.jar
+*.war
+.mvn/wrapper/maven-wrapper.jar
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env*.local
+frontend/.vercel
+
+# Env secrets
+.env
+.env.*
+!.env.example
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local secrets
+**/application-local.properties
+**/pg_hba.conf.bak*

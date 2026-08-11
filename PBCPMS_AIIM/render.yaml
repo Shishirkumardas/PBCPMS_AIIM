@@ -1,0 +1,28 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: pbcpms-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: JWT_SECRET
+        generateValue: true
+      - key: APP_SEED_ENABLED
+        value: "true"
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pbcpms-db
+          property: connectionString
+
+databases:
+  - name: pbcpms-db
+    plan: free
+    databaseName: pbcpms
+    user: pbcpms
